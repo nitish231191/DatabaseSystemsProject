@@ -1,38 +1,37 @@
 package SwingUI;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Enumeration;
 
+import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
-import javax.swing.ComboBoxModel;
 import javax.swing.DefaultListModel;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-import javax.swing.JTabbedPane;
-import javax.swing.JTextField;
-import javax.swing.JRadioButton;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ChangeEvent;
-import javax.swing.JButton;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import javax.swing.JComboBox;
-import javax.swing.JCheckBox;
-import javax.swing.JTextArea;
 import javax.swing.JList;
-import javax.swing.border.LineBorder;
-import javax.swing.AbstractListModel;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import java.awt.event.ItemListener;
-import java.awt.event.ItemEvent;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
+import dml.DML;
 
 public class DataBaseUI extends JFrame {
 
@@ -62,6 +61,7 @@ public class DataBaseUI extends JFrame {
 	private JTextField textField_19;
 	private JTextField textField_20;
 	private JTextField textField_21;
+	private DML dml;
 	
 
 	/**
@@ -91,10 +91,42 @@ public class DataBaseUI extends JFrame {
 	    
 	}
 
+	private boolean writeDB(String op, String tableName, String[] values, String[] newValues) {
+		tableName = "test";
+		System.out.println(op+":"+tableName+":"+values.length+":"+newValues.length);
+		boolean isSuccess = false;
+		try {
+			if(op.equals("Create"))
+				isSuccess = dml.create(tableName, values);
+			else if(op.equals("Update"))
+				isSuccess = dml.update(tableName, values, newValues);
+			else if(op.equals("Delete"))
+				isSuccess = dml.delete(tableName, values);
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
+		return isSuccess;
+	}
+
+	private ResultSet readDB(String tableName, String[] values) {
+		tableName = "test";
+		System.out.println(":"+tableName+":"+values.toString());
+		try {
+			return dml.read(tableName, values);
+		} catch(SQLException e) {
+			System.out.println(e.getMessage());
+		}
+		return null;
+	}
+
 	/**
 	 * Create the frame.
+	 * @throws SQLException 
+	 * @throws ClassNotFoundException 
 	 */
-	public DataBaseUI() {
+	public DataBaseUI() throws ClassNotFoundException, SQLException {
+		dml = new DML();
+
 		Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(0, 0,470,514);
@@ -337,29 +369,37 @@ public class DataBaseUI extends JFrame {
 					
 				});
 				
-				
 				newsubmit.add(exit);
 				newsubmit.add(textArea_1);
-				
-				
 				exit.setBounds(132, 358, 117, 29);
-				
-				
-				textField_1.setText("");
-				textField_2.setText("");
-				textField_7.setText("");
-				textField_8.setText("");
-				textField_9.setText("");
-				textField_10.setText("");
-				bgyesorno.clearSelection();
-				updateop.clearSelection();
-				
-				
-				
-				
-				System.out.println(tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()));
-				System.out.println(textField_1.getText());
-				
+
+				{
+					String isAvl = "";
+					if(rdbtnYes_1.isSelected())
+						isAvl = "Yes";
+					else if(rdbtnNo.isSelected())
+						isAvl = "No";
+	
+					String isAvlN = "";
+					if(rdbtnYes_2.isSelected())
+						isAvlN = "Yes";
+					else if(rdbtnNo_1.isSelected())
+						isAvlN = "No";
+	
+					String[] values = {textField_1.getText(), textField_7.getText(), textField_2.getText(), isAvl};
+					String[] newValues = {textField_8.getText(), textField_10.getText(), textField_9.getText(), isAvlN};
+					String tableName = tabbedPane.getTitleAt(tabbedPane.getSelectedIndex());
+					
+					for(Enumeration<AbstractButton> buttons = operation.getElements(); buttons.hasMoreElements();) {
+						AbstractButton button = buttons.nextElement();
+			            if (button.isSelected()) {
+			            	if(button.getText().equals("Select"))
+			            		readDB(tableName, values);
+			            	else
+			            		writeDB(button.getText(), tableName, values, newValues);
+			            }
+					}
+				}
 			}
 		});
 		btnSubmit.setBounds(57, 405, 117, 29);
@@ -604,8 +644,6 @@ public class DataBaseUI extends JFrame {
 				newsubmit.setLayout(null);
 				
 				JButton exit = new JButton("Back");
-				System.out.println(tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()));
-				System.out.println(textField_1.getText());
 				exit.addActionListener(new ActionListener(){
 
 					@Override
@@ -625,20 +663,38 @@ public class DataBaseUI extends JFrame {
 				
 				newsubmit.add(exit);
 				newsubmit.add(textArea_1);
-				
-				
 				exit.setBounds(132, 358, 117, 29);
-				
-				textField_11.setText("");
-				textField_12.setText("");
-				textField_13.setText("");
-				textField_14.setText("");
-				textField_15.setText("");
-				textField_16.setText("");
-				bgnewpeople.clearSelection();
-				peopledesig.clearSelection();
-				
-				
+
+				{
+					String desig = "";	
+					String desigN = "";
+					
+					for(Enumeration<AbstractButton> buttons = peopledesig.getElements(); buttons.hasMoreElements();) {
+						AbstractButton button = buttons.nextElement();
+			            if (button.isSelected())
+			            	desig = button.getText();
+					}
+					
+					for(Enumeration<AbstractButton> buttons = bgnewpeople.getElements(); buttons.hasMoreElements();) {
+						AbstractButton button = buttons.nextElement();
+			            if (button.isSelected())
+			            	desigN = button.getText();
+					}
+	
+					String[] values = {textField_11.getText(), textField_12.getText(), desig, textField_13.getText()};
+					String[] newValues = {textField_14.getText(), textField_15.getText(), desigN, textField_16.getText()};
+					String tableName = tabbedPane.getTitleAt(tabbedPane.getSelectedIndex());
+					
+					for(Enumeration<AbstractButton> buttons = peopleoperation.getElements(); buttons.hasMoreElements();) {
+						AbstractButton button = buttons.nextElement();
+			            if (button.isSelected()) {
+			            	if(button.getText().equals("Select"))
+			            		readDB(tableName, values);
+			            	else
+			            		writeDB(button.getText(), tableName, values, newValues);
+			            }
+					}
+				}
 			}
 		});
 		btnSubmit_1.setBounds(130, 419, 117, 29);
@@ -790,10 +846,6 @@ public class DataBaseUI extends JFrame {
 					comboBox_10.setVisible(false);
 					comboBox_11.setVisible(false);
 					textField_20.setVisible(false);
-					
-					
-					
-					
 				}
 			}
 		});
@@ -816,13 +868,7 @@ public class DataBaseUI extends JFrame {
 					comboBox_10.setVisible(false);
 					comboBox_11.setVisible(false);
 					textField_20.setVisible(false);
-					
-					
-					
-					
-					
 				}
-				
 			}
 		});
 		rdbtnNewRadioButton.setBounds(89, 215, 82, 23);
@@ -844,9 +890,6 @@ public class DataBaseUI extends JFrame {
 					comboBox_10.setVisible(false);
 					comboBox_11.setVisible(false);
 					textField_20.setVisible(false);
-					
-					
-					
 				}
 			}
 		});
@@ -869,9 +912,6 @@ public class DataBaseUI extends JFrame {
 					comboBox_10.setVisible(true);
 					comboBox_11.setVisible(true);
 					textField_20.setVisible(true);
-					
-					
-					
 				}
 			}
 		});
@@ -883,14 +923,6 @@ public class DataBaseUI extends JFrame {
 		bgborrow.add(rdbtnSelect_2);
 		bgborrow.add(rdbtnNewRadioButton);
 		bgborrow.add(rdbtnUpdate_2);
-		
-		
-		
-	
-		
-		
-		
-	
 		
 		JButton btnSubmit_2 = new JButton("Submit");
 		btnSubmit_2.addActionListener(new ActionListener() {
@@ -909,8 +941,6 @@ public class DataBaseUI extends JFrame {
 				newsubmit.setLayout(null);
 				
 				JButton exit = new JButton("Back");
-				System.out.println(tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()));
-				System.out.println(textField_1.getText());
 				exit.addActionListener(new ActionListener(){
 
 					@Override
@@ -930,32 +960,28 @@ public class DataBaseUI extends JFrame {
 				
 				newsubmit.add(exit);
 				newsubmit.add(textArea_1);
-				
-				
-				
-				
-				
 				exit.setBounds(132, 358, 117, 29);
 				
-				textField_17.setText("");
-				textField_18.setText("");
-				textField_19.setText("");
-				textField_20.setText("");
-				
-				comboBox_6.setSelectedIndex(0);;
-				comboBox_7.setSelectedIndex(0);
-				comboBox_8.setSelectedIndex(0);
-				comboBox_9.setSelectedIndex(0);
-				comboBox_10.setSelectedIndex(0);
-				comboBox_11.setSelectedIndex(0);
-				
-				
-				System.out.println(tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()));
-				System.out.println(textField_1.getText());
-				
-				
-				
-				
+				{
+					String bDate = (comboBox_2.getSelectedIndex()+2016) + "/" + (comboBox_1.getSelectedIndex()+1) + "/" + (comboBox.getSelectedIndex()+1);	
+					String dDate = (comboBox_5.getSelectedIndex()+2016) + "/" + (comboBox_4.getSelectedIndex()+1) + "/" + (comboBox_3.getSelectedIndex()+1);
+					String bDateN = (comboBox_10.getSelectedIndex()+2016) + "/" + (comboBox_8.getSelectedIndex()+1) + "/" + (comboBox_6.getSelectedIndex()+1);	
+					String dDateN = (comboBox_11.getSelectedIndex()+2016) + "/" + (comboBox_9.getSelectedIndex()+1) + "/" + (comboBox_7.getSelectedIndex()+1);
+	
+					String[] values = {textField_17.getText(), textField_18.getText(), bDate, dDate};
+					String[] newValues = {textField_19.getText(), textField_20.getText(), bDateN, dDateN};
+					String tableName = tabbedPane.getTitleAt(tabbedPane.getSelectedIndex());
+					
+					for(Enumeration<AbstractButton> buttons = bgborrow.getElements(); buttons.hasMoreElements();) {
+						AbstractButton button = buttons.nextElement();
+			            if (button.isSelected()) {
+			            	if(button.getText().equals("Select"))
+			            		readDB(tableName, values);
+			            	else
+			            		writeDB(button.getText(), tableName, values, newValues);
+			            }
+					}
+				}
 			}
 		});
 		btnSubmit_2.setBounds(152, 408, 117, 29);
@@ -1138,8 +1164,8 @@ public class DataBaseUI extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				
 				while(!list_1.isSelectionEmpty()){
-				listmodel_1.removeElement(list_1.getSelectedValue());
-				System.out.println("Selected value "+list_1.getSelectedValue());
+					listmodel_1.removeElement(list_1.getSelectedValue());
+					System.out.println("Selected value "+list_1.getSelectedValue());
 				}
 				
 			}
@@ -1204,8 +1230,6 @@ public class DataBaseUI extends JFrame {
 				newsubmit.setLayout(null);
 				
 				JButton exit = new JButton("Back");
-				System.out.println(tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()));
-				System.out.println(textField_1.getText());
 				exit.addActionListener(new ActionListener(){
 
 					@Override
@@ -1225,47 +1249,10 @@ public class DataBaseUI extends JFrame {
 				
 				newsubmit.add(exit);
 				newsubmit.add(textArea_1);
-				
-				
 				exit.setBounds(132, 358, 117, 29);
-				
 			}
 		});
 		btnSubmit_3.setBounds(131, 405, 117, 29);
 		panel_3.add(btnSubmit_3);
-		
-	
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
 	}
 }
