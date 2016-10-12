@@ -33,7 +33,7 @@ import javax.swing.event.ChangeListener;
 
 import dml.DML;
 
-public class DataBaseUI extends JFrame {
+public class DataBaseUIBak extends JFrame {
 
 	private JPanel contentPane;
 	private JTextField textField;
@@ -71,7 +71,7 @@ public class DataBaseUI extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					DataBaseUI frame = new DataBaseUI();
+					DataBaseUIBak frame = new DataBaseUIBak();
 					
 					frame.setVisible(true);
 				} catch (Exception e) {
@@ -122,7 +122,7 @@ public class DataBaseUI extends JFrame {
 	 * @throws SQLException 
 	 * @throws ClassNotFoundException 
 	 */
-	public DataBaseUI() throws ClassNotFoundException, SQLException {
+	public DataBaseUIBak() throws ClassNotFoundException, SQLException {
 		dml = new DML();
 
 		Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();

@@ -70,6 +70,11 @@ public class DML {
 		System.out.println("Executing: " + query);
 		return statement.executeQuery(query);
 	}
+	
+	public ResultSet executeRead(String query) throws SQLException {
+		System.out.println("Executing: " + query);
+		return statement.executeQuery(query);
+	}
 
 	public boolean update(String tableName, String[] values, String[] newValues) throws SQLException {
 		String query = "UPDATE " + tableName + " SET ";
