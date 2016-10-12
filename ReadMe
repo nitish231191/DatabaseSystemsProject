@@ -1,1 +1,10 @@
 
+To Run:
+
+Import the project in Eclipse
+
+Run DataBaseUI.java, this will bring up the UI for the user to manipulate the DB.
+
+DML.java has the schema used for creating the DB tables (in createTable()).
+
+
