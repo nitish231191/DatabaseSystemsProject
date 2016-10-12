@@ -26,6 +26,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
@@ -91,7 +92,7 @@ public class DataBaseUI extends JFrame {
 	    
 	}
 
-	private boolean writeDB(String op, String tableName, String[] values, String[] newValues) {
+	private String writeDB(String op, String tableName, String[] values, String[] newValues) {
 		System.out.println(op+":"+tableName+":"+values.length+":"+newValues.length);
 		boolean isSuccess = false;
 		try {
@@ -103,8 +104,9 @@ public class DataBaseUI extends JFrame {
 				isSuccess = dml.delete(tableName, values);
 		} catch(SQLException e) {
 			System.out.println(e.getMessage());
+			return "Database update failed, check console for details.";
 		}
-		return isSuccess;
+		return isSuccess?"Database updated successfully!":"No changes were made to the database.";
 	}
 
 	private ResultSet readDB(String tableName, String[] values) {
@@ -336,17 +338,13 @@ public class DataBaseUI extends JFrame {
 		JButton btnSubmit = new JButton("Submit");
 		btnSubmit.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
-			
+
 				
 				JPanel newsubmit = new JPanel();
 				int index = tabbedPane.getSelectedIndex();
 				tabbedPane.setComponentAt(index, newsubmit);
 				tabbedPane.repaint();
 				tabbedPane.validate();
-				
-				JTextArea textArea_1 = new JTextArea();
-				textArea_1.setBounds(71, 52, 308, 271);
 				
 				
 				newsubmit.setLayout(null);
@@ -368,7 +366,6 @@ public class DataBaseUI extends JFrame {
 				});
 				
 				newsubmit.add(exit);
-				newsubmit.add(textArea_1);
 				exit.setBounds(132, 358, 117, 29);
 
 				{
@@ -391,10 +388,46 @@ public class DataBaseUI extends JFrame {
 					for(Enumeration<AbstractButton> buttons = operation.getElements(); buttons.hasMoreElements();) {
 						AbstractButton button = buttons.nextElement();
 			            if (button.isSelected()) {
-			            	if(button.getText().equals("Select"))
-			            		readDB(tableName, values);
-			            	else
-			            		writeDB(button.getText(), tableName, values, newValues);
+			            	if(button.getText().equals("Select")) {
+			            		ResultSet rs = readDB(tableName, values);
+
+			    		        try {
+
+				    				String[] columns = new String[] {
+				    		            "ISBN", "Name", "Author", "IsAvailable"
+				    		        };
+				    				
+				    				int size = 0;
+				    				if (rs.last()) {
+				    					size = rs.getRow();
+				    					rs.beforeFirst();
+				    				}
+				    				
+				    		        Object[][] data = new Object[Math.min(size, 10)][4];
+				    		        size = 0;
+									while(rs.next() && size < 10) {
+										data[size][0] = rs.getString("ISBN");
+										data[size][1] = rs.getString("Name");
+										data[size][2] = rs.getString("Author");
+										data[size][3] = rs.getString("IsAvailable");
+										size++;
+									}
+				    				JScrollPane scrollPane = new JScrollPane();
+
+				    				JTable table_1 = new JTable(data,columns);
+				    				scrollPane.setViewportView(table_1);
+				    				scrollPane.setBounds(64, 44, 297, 307);
+				    				newsubmit.add(scrollPane);
+								} catch (SQLException e1) {
+									e1.printStackTrace();
+								}
+			            	} else {
+			    				JTextArea textArea_1 = new JTextArea();
+			    				textArea_1.setBounds(71, 52, 308, 271);
+			    				newsubmit.add(textArea_1);
+			            		String result = writeDB(button.getText(), tableName, values, newValues);
+			            		textArea_1.setText(result);
+			            	}
 			            }
 					}
 				}
@@ -411,6 +444,67 @@ public class DataBaseUI extends JFrame {
 		JButton button = new JButton("Show Different Books");
 		button.setBounds(205, 405, 179, 29);
 		panel.add(button);
+		button.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+
+				
+				JPanel newsubmit = new JPanel();
+				int index = tabbedPane.getSelectedIndex();
+				tabbedPane.setComponentAt(index, newsubmit);
+				tabbedPane.repaint();
+				tabbedPane.validate();
+				
+				
+				newsubmit.setLayout(null);
+				
+				try {
+					String query = "SELECT DISTINCT(Name) FROM Books WHERE IsAvailable=\"Yes\"";
+		        	ResultSet rs = dml.executeRead(query);
+
+    				String[] columns = {"Book.Name"};
+    				
+    				int size = 0;
+    				if (rs.last()) {
+    					size = rs.getRow();
+    					rs.beforeFirst();
+    				}
+    				System.out.println(size);
+    		        Object[][] data = new Object[Math.min(size, 10)][1];
+    		        size = 0;
+					while(rs.next() && size < 10) {
+						data[size][0] = rs.getString("Name");
+						size++;
+					}
+    				JScrollPane scrollPane = new JScrollPane();
+
+    				JTable table_1 = new JTable(data, columns);
+    				scrollPane.setViewportView(table_1);
+    				scrollPane.setBounds(10, 44, 400, 307);
+    				newsubmit.add(scrollPane);
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+				
+				JButton exit = new JButton("Back");
+				exit.addActionListener(new ActionListener(){
+
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						tabbedPane.setComponentAt(index, panel);
+						tabbedPane.repaint();
+						tabbedPane.validate();
+						
+						
+						// TODO Auto-generated method stub
+						
+					}
+					
+				});
+				newsubmit.add(exit);
+				exit.setBounds(132, 358, 117, 29);
+			}
+		});
+				
 		
 		JPanel panel_1 = new JPanel();
 		tabbedPane.addTab("People", null, panel_1, null);
@@ -635,9 +729,6 @@ public class DataBaseUI extends JFrame {
 				tabbedPane.repaint();
 				tabbedPane.validate();
 				
-				JTextArea textArea_1 = new JTextArea();
-				textArea_1.setBounds(71, 52, 308, 271);
-				
 				
 				newsubmit.setLayout(null);
 				
@@ -660,7 +751,6 @@ public class DataBaseUI extends JFrame {
 				
 				
 				newsubmit.add(exit);
-				newsubmit.add(textArea_1);
 				exit.setBounds(132, 358, 117, 29);
 
 				{
@@ -686,10 +776,46 @@ public class DataBaseUI extends JFrame {
 					for(Enumeration<AbstractButton> buttons = peopleoperation.getElements(); buttons.hasMoreElements();) {
 						AbstractButton button = buttons.nextElement();
 			            if (button.isSelected()) {
-			            	if(button.getText().equals("Select"))
-			            		readDB(tableName, values);
-			            	else
-			            		writeDB(button.getText(), tableName, values, newValues);
+			            	if(button.getText().equals("Select")) {
+			            		ResultSet rs = readDB(tableName, values);
+
+			    		        try {
+
+				    				String[] columns = new String[] {
+				    						"UID", "Name", "Designation", "Contact"
+				    		        };
+				    				
+				    				int size = 0;
+				    				if (rs.last()) {
+				    					size = rs.getRow();
+				    					rs.beforeFirst();
+				    				}
+				    				
+				    		        Object[][] data = new Object[Math.min(size, 10)][4];
+				    		        size = 0;
+									while(rs.next() && size < 10) {
+										data[size][0] = rs.getLong("UID");
+										data[size][1] = rs.getString("Name");
+										data[size][2] = rs.getString("Designation");
+										data[size][3] = rs.getString("Contact");
+										size++;
+									}
+				    				JScrollPane scrollPane = new JScrollPane();
+
+				    				JTable table_1 = new JTable(data,columns);
+				    				scrollPane.setViewportView(table_1);
+				    				scrollPane.setBounds(64, 44, 297, 307);
+				    				newsubmit.add(scrollPane);
+								} catch (SQLException e1) {
+									e1.printStackTrace();
+								}
+			            	} else {
+			            		JTextArea textArea_1 = new JTextArea();
+			    				textArea_1.setBounds(71, 52, 308, 271);
+			    				newsubmit.add(textArea_1);
+			            		String result = writeDB(button.getText(), tableName, values, newValues);
+			            		textArea_1.setText(result);
+			            	}
 			            }
 					}
 				}
@@ -932,9 +1058,6 @@ public class DataBaseUI extends JFrame {
 				tabbedPane.repaint();
 				tabbedPane.validate();
 				
-				JTextArea textArea_1 = new JTextArea();
-				textArea_1.setBounds(71, 52, 308, 271);
-				
 				
 				newsubmit.setLayout(null);
 				
@@ -957,7 +1080,6 @@ public class DataBaseUI extends JFrame {
 				
 				
 				newsubmit.add(exit);
-				newsubmit.add(textArea_1);
 				exit.setBounds(132, 358, 117, 29);
 				
 				{
@@ -973,10 +1095,52 @@ public class DataBaseUI extends JFrame {
 					for(Enumeration<AbstractButton> buttons = bgborrow.getElements(); buttons.hasMoreElements();) {
 						AbstractButton button = buttons.nextElement();
 			            if (button.isSelected()) {
-			            	if(button.getText().equals("Select"))
-			            		readDB(tableName, values);
-			            	else
-			            		writeDB(button.getText(), tableName, values, newValues);
+			            	if(button.getText().equals("Select")) {
+			            		ResultSet rs = readDB(tableName, values);
+
+			    		        try {
+
+				    				String[] columns = new String[] {
+				    						"UID", "Name", "Designation", "Contact", "BorrowedDate", "DueDate", "Name", "Author", "ISBN", "IsAvailable"
+				    		        };
+				    				
+				    				int size = 0;
+				    				if (rs.last()) {
+				    					size = rs.getRow();
+				    					rs.beforeFirst();
+				    				}
+				    				System.out.println(size);
+				    		        Object[][] data = new Object[Math.min(size, 10)][10];
+				    		        size = 0;
+									while(rs.next() && size < 10) {
+										data[size][0] = rs.getLong("UID");
+										data[size][1] = rs.getString("Name");
+										data[size][2] = rs.getString("Designation");
+										data[size][3] = rs.getString("Contact");
+										data[size][4] = rs.getString("BorrowedDate");
+										data[size][5] = rs.getString("DueDate");
+										data[size][6] = rs.getString("ISBN");
+										data[size][7] = rs.getString("Name");
+										data[size][8] = rs.getString("Author");
+										data[size][9] = rs.getString("IsAvailable");
+										size++;
+									}
+				    				JScrollPane scrollPane = new JScrollPane();
+
+				    				JTable table_1 = new JTable(data,columns);
+				    				scrollPane.setViewportView(table_1);
+				    				scrollPane.setBounds(10, 44, 400, 307);
+				    				newsubmit.add(scrollPane);
+								} catch (SQLException e1) {
+									e1.printStackTrace();
+								}
+			            	} else {
+			            		JTextArea textArea_1 = new JTextArea();
+			    				textArea_1.setBounds(71, 52, 308, 271);
+			    				newsubmit.add(textArea_1);
+			            		String result = writeDB(button.getText(), tableName, values, newValues);
+			            		textArea_1.setText(result);
+			            	}
 			            }
 					}
 				}
@@ -1016,7 +1180,7 @@ public class DataBaseUI extends JFrame {
 		
 		String [] attributes_Book = {"Book.Name","Author","IsAvailable","ISBN"};
 		
-		String [] attributes_people = {"Student.Name","UID","Designation","Contact"};
+		String [] attributes_people = {"People.Name","UID","Designation","Contact"};
 		
 		String [] attributes_Borrowed = {"BorrowedDate","DueDate"};
 		
@@ -1123,6 +1287,8 @@ public class DataBaseUI extends JFrame {
 			}
 		});
 		chckbxBorrowers.setBounds(196, 173, 110, 23);
+		chckbxBorrowers.setSelected(true);
+		chckbxBorrowers.setEnabled(false);
 		panel_3.add(chckbxBorrowers);
 		
 		JLabel lblWhere = new JLabel("Where");
@@ -1178,7 +1344,7 @@ public class DataBaseUI extends JFrame {
 		DefaultListModel listmodel_groupby_2 = new DefaultListModel();
 		 
 		
-		String[] all_attributes={"Books.Name","Student.Name","UID","ISBN","IsAvailable","Author","Designation","ContactNumber","BorrowedDate","DueDate"};
+		String[] all_attributes={"Books.Name","People.Name","UID","ISBN","IsAvailable","Author","Designation","ContactNumber","BorrowedDate","DueDate"};
 		
 		for(int i=0;i<all_attributes.length;i++){
 			listmodel_groupby.addElement(all_attributes[i]);
@@ -1222,9 +1388,6 @@ public class DataBaseUI extends JFrame {
 				tabbedPane.repaint();
 				tabbedPane.validate();
 				
-				JTextArea textArea_1 = new JTextArea();
-				textArea_1.setBounds(71, 52, 308, 271);
-				
 				
 				newsubmit.setLayout(null);
 				
@@ -1247,7 +1410,6 @@ public class DataBaseUI extends JFrame {
 				
 				
 				newsubmit.add(exit);
-				newsubmit.add(textArea_1);
 				exit.setBounds(132, 358, 117, 29);
 				
 				{
@@ -1277,7 +1439,7 @@ public class DataBaseUI extends JFrame {
 						if(tables.isEmpty())
 							tables = chckbxBooks.getText();
 						else
-							tables += " NATURAL JOIN " + chckbxBooks.getText();
+							tables += " INNER JOIN " + chckbxBooks.getText() + " ON Books.ISBN=Borrowers.ISBN";
 					query += tables;
 
 					if(!textArea.getText().isEmpty() && comboBox_12.getSelectedIndex() != 0 && !textField_12.getText().isEmpty())
@@ -1290,7 +1452,37 @@ public class DataBaseUI extends JFrame {
 							else query += ", " + listmodel_groupby_2.getElementAt(i);
 					}
 					System.out.println(query);
-				}
+
+    		        try {
+    		        	ResultSet rs = dml.executeRead(query);
+
+	    				String[] columns = new String[listmodel_1.getSize()];
+						for(int i = 0; i < listmodel_1.getSize(); i++)
+							columns[i] = listmodel_1.getElementAt(i).toString();
+	    				
+	    				int size = 0;
+	    				if (rs.last()) {
+	    					size = rs.getRow();
+	    					rs.beforeFirst();
+	    				}
+	    				System.out.println(size);
+	    		        Object[][] data = new Object[Math.min(size, 10)][listmodel_1.getSize()];
+	    		        size = 0;
+						while(rs.next() && size < 10) {
+							for(int i = 0; i < listmodel_1.getSize(); i++)
+								data[size][i] = rs.getString(listmodel_1.getElementAt(i).toString());
+							size++;
+						}
+	    				JScrollPane scrollPane = new JScrollPane();
+
+	    				JTable table_1 = new JTable(data, columns);
+	    				scrollPane.setViewportView(table_1);
+	    				scrollPane.setBounds(10, 44, 400, 307);
+	    				newsubmit.add(scrollPane);
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+	            }
 			}
 		});
 		btnSubmit_3.setBounds(131, 405, 117, 29);

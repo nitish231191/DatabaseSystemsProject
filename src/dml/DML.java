@@ -55,8 +55,11 @@ public class DML {
 	public ResultSet read(String tableName, String[] values) throws SQLException {
 		String query = "SELECT * FROM " + tableName;
 		String[] attrs = attributes.get(tableName);
-		if(tableName.equals("Borrowers"))
-			query += " NATURAL JOIN People NATURAL JOIN Books";
+		if(tableName.equals("Borrowers")) {
+			query += " NATURAL JOIN People INNER JOIN Books ON Books.ISBN=Borrowers.ISBN";
+			values[2] = "";
+			values[3] = "";
+		}
 		String attrString = "";
 		for(int i = 0; i < values.length; i++)
 			if(!values[i].isEmpty())
